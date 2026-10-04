@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Runs before every push: the same gates as CI, so nothing reaches GitHub red.
+# Full suite with coverage minimum, Brakeman security scan, gem CVE audit.
+source "$(dirname "$0")/_ruby_env"
+# No `set -u`: rvm's cd hook reads unset variables.
+set -eo pipefail
+
+cd "$(git rev-parse --show-toplevel)/api"
+
+echo "pre-push: RSpec (full suite, coverage enforced)"
+CI=true bundle exec rspec --format progress
+
+echo "pre-push: Brakeman"
+bundle exec brakeman --quiet --no-pager --no-summary
+
+echo "pre-push: bundler-audit"
+bundle exec bundle-audit check --update

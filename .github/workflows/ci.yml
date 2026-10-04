@@ -1,0 +1,108 @@
+# Continuous integration for the Rails API (api/). Every push and pull request
+# must pass all jobs; the pre-push git hook runs the same gates locally.
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+defaults:
+  run:
+    working-directory: api
+
+env:
+  RAILS_ENV: test
+  CI: true
+  DATABASE_HOST: 127.0.0.1
+  DATABASE_USERNAME: root
+  DATABASE_PASSWORD: root
+
+jobs:
+  lint:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: api
+          bundler-cache: true
+      - run: bin/rubocop -f github
+
+  security:
+    name: Brakeman + bundler-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: api
+          bundler-cache: true
+      - name: Static security scan
+        run: bin/brakeman --no-pager
+      - name: Known vulnerabilities in gems
+        run: bundle exec bundle-audit check --update
+
+  test:
+    name: RSpec
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: [ "3306:3306" ]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: api
+          bundler-cache: true
+      - name: Prepare test database
+        run: bin/rails db:test:prepare
+      - name: Run specs (coverage minimum enforced)
+        run: bundle exec rspec --format documentation
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: api/coverage
+
+  data-checks:
+    name: Schema, migrations, seeds, production boot
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: development
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: [ "3306:3306" ]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: api
+          bundler-cache: true
+      - name: Migrations build the committed schema from scratch
+        run: |
+          bin/rails db:create db:migrate
+          git diff --exit-code db/schema.rb
+      - name: No pending migrations
+        run: bin/rails db:abort_if_pending_migrations
+      - name: Seeds run, and are idempotent
+        run: bin/rails db:seed && bin/rails db:seed
+      - name: Production environment boots
+        env:
+          RAILS_ENV: production
+          SECRET_KEY_BASE_DUMMY: 1
+        run: bin/rails runner 'puts "Booted #{Rails.env}"'

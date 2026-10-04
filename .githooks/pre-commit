@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Runs before every commit: blocks merge-conflict markers, lints the staged
+# Ruby files with RuboCop and runs the test suite when backend code changed.
+# Enable once per clone: git config core.hooksPath .githooks
+source "$(dirname "$0")/_ruby_env"
+# No `set -u`: rvm's cd hook reads unset variables.
+set -eo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+while IFS= read -r file; do
+  if grep -nE '^(<<<<<<<|>>>>>>>)( |$)' "$file" >/dev/null 2>&1; then
+    echo "pre-commit: merge conflict markers in $file" >&2
+    exit 1
+  fi
+done <<< "$staged"
+
+ruby_files=$(grep -E '^api/(.*\.rb|Gemfile)$' <<< "$staged" | sed 's#^api/##' || true)
+[ -z "$ruby_files" ] && exit 0
+
+cd api
+echo "pre-commit: RuboCop on staged Ruby files"
+# shellcheck disable=SC2086
+bundle exec rubocop --force-exclusion $ruby_files
+
+echo "pre-commit: RSpec"
+bundle exec rspec --format progress

@@ -1,0 +1,8 @@
+# Shared by the git hooks. Hooks run without your shell profile, so load the
+# Ruby version manager (rvm or rbenv) when present to get the project's Ruby.
+if [ -s "$HOME/.rvm/scripts/rvm" ]; then
+  # shellcheck disable=SC1091
+  source "$HOME/.rvm/scripts/rvm"
+elif command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - bash)"
+fi

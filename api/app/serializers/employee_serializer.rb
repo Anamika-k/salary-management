@@ -6,7 +6,13 @@ class EmployeeSerializer
       last_name: employee.last_name,
       joining_date: employee.joining_date,
       exit_date: employee.exit_date,
-      country: Country.find(employee.country_code)
+      country: Country.find(employee.country_code),
+      current_salary: current_salary(employee.current_salary)
     )
+  end
+
+  def self.current_salary(salary)
+    salary && salary.slice(:annual_salary, :currency, :effective_from)
+                    .merge(salary_structure: salary.salary_structure.slice(:id, :name))
   end
 end

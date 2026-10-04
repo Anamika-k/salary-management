@@ -7,6 +7,9 @@ class Employee < ApplicationRecord
   SEARCHABLE_COLUMNS = %i[first_name last_name email employee_code].freeze
 
   belongs_to :department
+  has_many :employee_salaries
+  # The live salary in effect today; preloadable, so lists avoid N+1.
+  has_one :current_salary, -> { kept.as_of(Date.current) }, class_name: "EmployeeSalary"
 
   enum :employment_status, { active: "active", on_leave: "on_leave", terminated: "terminated" }, validate: true
 

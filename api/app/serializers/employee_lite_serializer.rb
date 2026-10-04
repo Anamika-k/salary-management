@@ -1,5 +1,5 @@
-# Only the columns the employee list shows. Expects the department to be
-# preloaded (Employees::SearchService includes it) so there is no N+1.
+# Only the columns the employee list shows. Expects department and current
+# salary to be preloaded (Employees::SearchService includes them) so there is no N+1.
 class EmployeeLiteSerializer
   def self.call(employee)
     {
@@ -10,7 +10,8 @@ class EmployeeLiteSerializer
       designation: employee.designation,
       country_code: employee.country_code,
       employment_status: employee.employment_status,
-      department: DepartmentSerializer.call(employee.department)
+      department: DepartmentSerializer.call(employee.department),
+      current_salary: employee.current_salary&.slice(:annual_salary, :currency)
     }
   end
 end

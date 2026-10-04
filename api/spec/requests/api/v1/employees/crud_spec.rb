@@ -19,6 +19,16 @@ RSpec.describe "Employee create, show, update and delete", type: :request do
       )
     end
 
+    it "includes today's salary with its structure and start date" do
+      structure = create(:salary_structure, name: "India Standard")
+      create(:employee_salary, employee:, salary_structure: structure, effective_from: Date.new(2024, 1, 15))
+      get "/api/v1/employees/#{employee.id}", headers: headers
+      expect(response.parsed_body["data"]["current_salary"]).to include(
+        "annual_salary" => "1200000.0", "effective_from" => "2024-01-15",
+        "salary_structure" => { "id" => structure.id, "name" => "India Standard" }
+      )
+    end
+
     it "returns 404 for a missing or soft-deleted employee" do
       get "/api/v1/employees/0", headers: headers
       expect(response).to have_http_status(:not_found)

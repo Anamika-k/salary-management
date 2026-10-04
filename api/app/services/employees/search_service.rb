@@ -18,7 +18,7 @@ module Employees
     end
 
     def call
-      scope = Employee.kept.includes(:department).search(@params[:q])
+      scope = Employee.kept.includes(:department, :current_salary).search(@params[:q])
       FILTERS.each do |param, filter|
         scope = scope.public_send(filter, @params[param]) if @params[param].present?
       end

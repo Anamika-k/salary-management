@@ -21,8 +21,16 @@ RSpec.describe "GET /api/v1/employees", type: :request do
     expect(response.parsed_body["data"]).to eq([ {
       "id" => employee.id, "employee_code" => employee.employee_code, "full_name" => "Asha Verma",
       "email" => employee.email, "designation" => "Software Engineer", "country_code" => "IN",
-      "employment_status" => "active", "department" => { "id" => department.id, "name" => "Engineering" }
+      "employment_status" => "active", "department" => { "id" => department.id, "name" => "Engineering" },
+      "current_salary" => nil
     } ])
+  end
+
+  it "includes today's salary" do
+    employee = create(:employee, department:)
+    create(:employee_salary, employee:, annual_salary: 1_500_000, currency: "INR", effective_from: Date.current - 1)
+    list
+    expect(response.parsed_body["data"].first["current_salary"]).to eq("annual_salary" => "1500000.0", "currency" => "INR")
   end
 
   it "applies search and filters" do
@@ -63,11 +71,11 @@ RSpec.describe "GET /api/v1/employees", type: :request do
   end
 
   it "runs the same number of queries however many employees are listed (no N+1)" do
-    create(:employee, department: create(:department))
+    create(:employee_salary, employee: create(:employee, department: create(:department)))
     headers
     one = count_queries { list }
 
-    create_list(:employee, 3) # each in its own new department
+    create_list(:employee, 3).each { |employee| create(:employee_salary, employee:) } # each in its own department
     expect(count_queries { list }).to eq(one)
   end
 end

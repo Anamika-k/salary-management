@@ -5,3 +5,4 @@
 # Local environment variables (secrets never committed)
 .env
 .env.*
+!.env.sample

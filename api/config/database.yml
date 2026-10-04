@@ -14,8 +14,11 @@ default: &default
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: <%= ENV.fetch("DATABASE_USERNAME", "root") %>
-  password: <%= ENV.fetch("DATABASE_PASSWORD", "rootroot") %>
-  socket: /tmp/mysql.sock
+  # Set in api/.env locally (see .env.sample); never commit a real password here.
+  password: <%= ENV.fetch("DATABASE_PASSWORD", "") %>
+  # Local MySQL uses the socket; set DATABASE_HOST (e.g. CI) to connect over TCP instead.
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  socket: <%= "/tmp/mysql.sock" unless ENV["DATABASE_HOST"] %>
 
 development:
   <<: *default

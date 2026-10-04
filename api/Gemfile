@@ -25,10 +25,6 @@ gem "bootsnap", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
-
-# json 3.x drops options ActiveSupport 8.0 still passes; remove the pin after upgrading Rails
-gem "json", "~> 2.19"
-
 # Allow the React app (separate origin) to call the API [https://github.com/cyu/rack-cors]
 gem "rack-cors"
 

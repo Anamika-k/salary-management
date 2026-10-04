@@ -1,0 +1,7 @@
+# OS / editor files
+.DS_Store
+*.swp
+
+# Local environment variables (secrets never committed)
+.env
+.env.*

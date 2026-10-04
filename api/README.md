@@ -1,24 +1,3 @@
-# README
+# ACME Salary Management: API
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
-
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+The Rails 8 API for ACME Salary Management. Setup, commands, conventions and the quality pipeline are documented in the [repository README](../README.md).

@@ -52,6 +52,7 @@ bin/rails console               # Rails console
    ```shell
    bin/rails db:prepare
    ```
+   This creates the HR Manager, 10 departments and 10,000 realistic employees across 6 countries in about 2 seconds. The data is identical on every machine, and re-running `bin/rails db:seed` never duplicates rows or overwrites edits.
 5. **Enable the git hooks** (once per clone, from the repository root)
    ```shell
    git config core.hooksPath .githooks
@@ -78,6 +79,7 @@ bin/rails console               # Rails console
 | `DEVISE_JWT_SECRET_KEY` | JWT signing secret; **set in production** | `secret_key_base` |
 | `FRONTEND_ORIGINS` | Comma-separated origins allowed by CORS | `http://localhost:5173` |
 | `SEED_HR_EMAIL` / `SEED_HR_PASSWORD` | Seeded HR Manager; password **required in production** | `hr@acme.com` / `ChangeMe123!` |
+| `SEED_EMPLOYEE_COUNT` | How many demo employees the seed creates | `10000` |
 
 ## How a request flows
 
@@ -160,7 +162,20 @@ All endpoints are under `/api/v1` and require `Authorization: Bearer <token>` un
 | `GET` | `/auth/me` | The signed-in user |
 | `DELETE` | `/auth/sign_out` | Revoke the current token |
 
-More endpoints (employees, salaries, structures, insights) will be documented here as they're built.
+| `GET` | `/employees` | Paginated list (lite fields). Params: `q` (searches name, email, code), `department_id`, `country_code`, `employment_status`, `designation`, `sort` (`employee_code`, `first_name`, `last_name`, `joining_date`, `created_at`), `direction` (`asc`/`desc`), `page`, `per_page` (default 25, max 100) |
+| `GET` | `/employees/:id` | Full employee record |
+| `POST` | `/employees` | Create. Body `{ employee: { first_name, last_name, email, country_code, department_id, designation, joining_date, employment_status?, exit_date? } }`. The employee code is generated |
+| `PATCH` | `/employees/:id` | Update (same fields; the code never changes) |
+| `DELETE` | `/employees/:id` | Soft delete |
+| `GET` | `/departments` | Paginated list of departments |
+| `POST` | `/departments` | Create `{ department: { name } }`; restores a deleted department with the same name |
+| `PATCH` | `/departments/:id` | Rename |
+| `DELETE` | `/departments/:id` | Soft delete; `409 in_use_error` while employees belong to it |
+| `GET` | `/filters` | Dropdown options: departments, countries (with currency), designations in use, statuses |
+
+Lists respond with `{ data: [...], meta: { current_page, total_pages, total_count, per_page } }`, single records with `{ data: {...} }`.
+
+More endpoints (salaries, structures, insights) will be documented here as they're built.
 
 ## Status
 
@@ -170,7 +185,7 @@ More endpoints (employees, salaries, structures, insights) will be documented he
 | Database schema (8 tables) | Done |
 | Authentication (Devise + JWT) | Done |
 | Error handling, quality pipeline, CI | Done |
-| Employees and departments | Next |
+| Employees and departments | Done |
 | Salary structures and calculator | Planned |
 | Salary history and audit log | Planned |
 | Insights | Planned |

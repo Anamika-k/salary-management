@@ -1,0 +1,43 @@
+---
+description: Rails API structure and conventions for the backend
+globs: api/**/*.rb
+alwaysApply: false
+---
+
+# Rails Backend Rules
+
+## One-way hierarchy
+`Controller -> Service -> Model`. Never the reverse; models never call services or controllers.
+
+- **Controllers**: params, authentication/authorization, call one service or simple query, render JSON. Nothing else.
+- **Services** (`app/services`): all business logic and multi-step work (calculations, salary changes, insights, audit logging).
+- **Models**: associations, validations, enums, scopes. No complex processing or callbacks with side effects.
+
+```ruby
+# BAD: logic in controller
+def create
+  salary = employee.salaries.create!(params)
+  employee.salaries.where.not(id: salary.id).update_all(effective_to: salary.effective_from - 1)
+end
+
+# GOOD
+def create
+  salary = Salaries::ChangeService.call(employee:, params: salary_params)
+  render json: SalarySerializer.new(salary), status: :created
+end
+```
+
+## Lite APIs
+- Return only the columns a screen needs. Use `select` / dedicated serializers.
+- Filter dropdowns and lists get lightweight endpoints, never the full table or full records.
+- Paginate every list endpoint.
+
+## Querying
+- Query through associations (`department.employees.active`), not manual id lookups.
+- No N+1: use `includes` / `preload`; aggregates (`count`, `sum`, `average`, `group`) run in the database.
+- Use scopes for reusable filters; soft-deleted records excluded via an explicit scope (e.g. `kept`).
+
+## Standards
+- Follow Rails conventions: RESTful routes, strong params, `snake_case`, one class per file.
+- Enforce important rules in both model validations and DB constraints (unique indexes, NOT NULL, checks).
+- Tests in RSpec + FactoryBot: services get unit specs, endpoints get request specs.

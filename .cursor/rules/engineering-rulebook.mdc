@@ -1,0 +1,33 @@
+---
+description: Core engineering rule book for ACME Salary Management (applies to all code)
+alwaysApply: true
+---
+
+# Engineering Rule Book
+
+## Process
+- Make no changes unless the user explicitly asks. Discuss approach first when unsure.
+- Test first: list every edge case, write the failing tests, then write code to make them pass.
+- Small, incremental commits with conventional messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `perf:`).
+
+## Code style
+- Keep it simple. Prefer the plain, obvious solution over a clever one.
+- Files stay small and readable: aim for 100 lines, hard limit ~150. Split when it grows.
+- No duplicate code. Extract shared logic into a service, concern or helper.
+- Every class/module starts with a short comment saying what it is for and why it exists,
+  so whoever modifies it later knows the intent. Comment non-obvious logic only.
+
+```ruby
+# Calculates the monthly earnings/deductions breakdown for one employee salary.
+# All salary math lives here so rules change in one place.
+class SalaryCalculator
+```
+
+## Data
+- Never hard delete business data. Use soft delete (`deleted_at` timestamp).
+  Hard delete only for data that will never be used again (e.g. expired tokens).
+- Money is always `decimal`, never float.
+
+## Security
+- No raw SQL. Use ActiveRecord query methods and associations.
+  Raw SQL only when truly unavoidable, always parameterised, with a comment explaining why.

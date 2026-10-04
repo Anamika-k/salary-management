@@ -9,6 +9,10 @@ Rails.application.routes.draw do
         get "auth/me", to: "auth/sessions#show"
         delete "auth/sign_out", to: "auth/sessions#destroy"
       end
+
+      resources :employees
+      resources :departments, only: %i[index create update destroy]
+      resource :filters, only: :show
     end
   end
 

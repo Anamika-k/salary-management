@@ -51,7 +51,14 @@ Errors are never swallowed. Our code doesn't `rescue` anything. Expected failure
 | `ActiveRecord::RecordInvalid` | 422, with field errors in `details` |
 | `ApplicationError` subclasses (domain rules, e.g. overlapping salary periods) | Their own declared status |
 
-Every handled error is logged as a warning, so expected failures are still visible. **Anything unexpected is deliberately not rescued.** It becomes a 500, Rails logs it with a full backtrace, and production error tracking reports it. A bug can never be hidden behind a friendly message.
+Every handled error is logged as a warning, so expected failures are still visible.
+
+**Unexpected errors (bugs)** are caught only by a final fallback in the same concern, which never hides them:
+1. It logs the error class, message and full backtrace at error level.
+2. It reports the error through `Rails.error.report`, the hook any error tracker (Sentry, Rollbar…) subscribes to.
+3. It responds with a generic `500 { "error": "Something went wrong", "code": "internal_server_error" }`, so no stack traces or SQL leak to the client.
+
+Services, models and controller actions never `rescue`; errors always travel up to this one place.
 
 All error responses have the same shape, compatible with Devise's own 401 body, so the React app reads `error` the same way everywhere:
 

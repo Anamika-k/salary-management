@@ -50,7 +50,23 @@ RSpec.describe ErrorHandling, type: :controller do
     expect(Rails.logger).to have_received(:warn).with(a_string_including("not_found"))
   end
 
-  it "never swallows unexpected errors" do
-    expect { get :index, params: { case: "unexpected" } }.to raise_error(RuntimeError, "boom")
+  describe "unexpected errors" do
+    it "renders a generic 500 without leaking internals" do
+      get :index, params: { case: "unexpected" }
+      expect(response).to have_http_status(:internal_server_error)
+      expect(body).to eq("error" => "Something went wrong", "code" => "internal_server_error", "details" => {})
+    end
+
+    it "logs the error with its backtrace" do
+      allow(Rails.logger).to receive(:error)
+      get :index, params: { case: "unexpected" }
+      expect(Rails.logger).to have_received(:error).with(a_string_including("RuntimeError", "boom", "error_handling_spec.rb"))
+    end
+
+    it "reports the error to error tracking" do
+      allow(Rails.error).to receive(:report)
+      get :index, params: { case: "unexpected" }
+      expect(Rails.error).to have_received(:report).with(an_instance_of(RuntimeError), handled: false)
+    end
   end
 end

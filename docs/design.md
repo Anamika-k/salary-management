@@ -48,6 +48,7 @@ Errors are never swallowed. Our code doesn't `rescue` anything. Expected failure
 | Missing or invalid token (Devise) | 401 |
 | `ActiveRecord::RecordNotFound` | 404 |
 | `ActionController::ParameterMissing` | 400 |
+| `Date::Error` (invalid date parameter) | 400 `invalid_date` |
 | `ActiveRecord::RecordInvalid` | 422, with field errors in `details` |
 | `ApplicationError` subclasses (domain rules, e.g. overlapping salary periods) | Their own declared status |
 
@@ -75,8 +76,8 @@ All endpoints sit under `/api/v1` and require a signed-in HR user, except sign-i
 | Auth | `POST /auth/sign_in`, `DELETE /auth/sign_out` |
 | Employees | `GET /employees` (paginated, search and filters, lite columns), `GET/POST/PATCH/DELETE /employees/:id` (delete = soft delete) |
 | Departments | `GET/POST/PATCH/DELETE /departments` (delete = soft delete, refused while employees belong to it) |
-| Salaries | `GET /employees/:id/salaries` (history), `POST /employees/:id/salaries` (salary change), `GET /employees/:id/salary_breakdown?on=date` |
-| Structures | `GET/POST/PATCH/DELETE /salary_structures` (components nested), `GET /salary_components` |
+| Salaries | `GET /employees/:id/salaries` (history), `POST /employees/:id/salaries` (salary change), `GET /employees/:id/salaries/breakdown?on=date`, `GET /employees/:id/audit_logs` (salary audit trail) |
+| Structures | `GET /salary_structures`, `GET /salary_structures/:id` (rules nested), `GET /salary_structures/:id/preview?annual_salary=`, `PATCH /salary_structures/:id/components/:rule_id` (value only), `GET /salary_components`. Structures are seeded per country; HR edits rule values |
 | Filters | `GET /filters`: departments (id, name), countries, designations and statuses in one small payload for dropdowns |
 | Insights | `GET /insights/summary`, `/insights/by_country`, `/insights/by_department?country=`, `/insights/distribution?country=`, `/insights/recent_changes` |
 
@@ -114,6 +115,8 @@ The breakdown is the **standard monthly salary**, not an actual month's payout. 
 | Soft delete | Salary data is sensitive and must stay auditable | Every query must exclude deleted rows, handled through scopes |
 | No background jobs | Nothing in MVP is slow enough to need them | Revisit if payroll runs are added |
 | Countries as a fixed list in code, each with its currency | Changes rarely and needs no screen; the currency becomes the salary default | Adding a country is a one-line code change |
+| Structures seeded per country; HR edits rule values only | Covers the real need (rates change) without a structure builder UI | A new structure or component needs a seed change |
+| Salary history only moves forward | No re-closing of past periods, so history can't be silently rewritten; mistakes become visible "correction" entries | HR can't insert a period into the past |
 | Employee codes generated (`EMP000001`) | Always unique and in sequence; HR never types them | Codes can't follow a custom format |
 
 ## Performance at 10,000 employees

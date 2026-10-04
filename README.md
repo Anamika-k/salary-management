@@ -52,7 +52,7 @@ bin/rails console               # Rails console
    ```shell
    bin/rails db:prepare
    ```
-   This creates the HR Manager, 10 departments and 10,000 realistic employees across 6 countries in about 2 seconds. The data is identical on every machine, and re-running `bin/rails db:seed` never duplicates rows or overwrites edits.
+   This creates the HR Manager, 10 departments, one salary structure per country, 10,000 realistic employees across 6 countries and about 56,000 salary records (joining salaries plus yearly raises) in under 10 seconds. The data is identical on every machine, and re-running `bin/rails db:seed` never duplicates rows or overwrites edits.
 5. **Enable the git hooks** (once per clone, from the repository root)
    ```shell
    git config core.hooksPath .githooks
@@ -108,6 +108,7 @@ Errors are never swallowed. Services, models and controller actions don't `rescu
 | Missing/invalid/expired token | `401` |
 | Record not found | `404 not_found` |
 | Missing parameter | `400 parameter_missing` |
+| Invalid date parameter | `400 invalid_date` |
 | Validation failed | `422 record_invalid`, with field errors in `details` |
 | Domain rule (`ApplicationError` subclass) | Its own status and code |
 | Anything else (a bug) | Logged with full backtrace, reported via `Rails.error.report`, generic `500` |
@@ -167,15 +168,24 @@ All endpoints are under `/api/v1` and require `Authorization: Bearer <token>` un
 | `POST` | `/employees` | Create. Body `{ employee: { first_name, last_name, email, country_code, department_id, designation, joining_date, employment_status?, exit_date? } }`. The employee code is generated |
 | `PATCH` | `/employees/:id` | Update (same fields; the code never changes) |
 | `DELETE` | `/employees/:id` | Soft delete |
+| `GET` | `/employees/:id/salaries` | Pay history, newest first |
+| `POST` | `/employees/:id/salaries` | Record a salary change `{ salary: { annual_salary, salary_structure_id, effective_from, change_type, notes? } }`. Closes the current salary the day before; history only moves forward; audited |
+| `GET` | `/employees/:id/salaries/breakdown?on=YYYY-MM-DD` | Monthly breakdown of the salary in effect on a date (default today) |
+| `GET` | `/employees/:id/audit_logs` | Salary audit trail: who changed what, when |
 | `GET` | `/departments` | Paginated list of departments |
 | `POST` | `/departments` | Create `{ department: { name } }`; restores a deleted department with the same name |
 | `PATCH` | `/departments/:id` | Rename |
 | `DELETE` | `/departments/:id` | Soft delete; `409 in_use_error` while employees belong to it |
 | `GET` | `/filters` | Dropdown options: departments, countries (with currency), designations in use, statuses |
+| `GET` | `/salary_components` | The pay item catalogue (Basic, HRA, PF, Income Tax…) |
+| `GET` | `/salary_structures` | Salary structures (one standard structure per country) |
+| `GET` | `/salary_structures/:id` | A structure with its rules in calculation order |
+| `GET` | `/salary_structures/:id/preview?annual_salary=1200000` | Monthly breakdown (earnings, deductions, net pay) for any annual salary |
+| `PATCH` | `/salary_structures/:id/components/:rule_id` | Change one rule's value `{ component: { value } }`, e.g. PF 12% → 10% |
 
 Lists respond with `{ data: [...], meta: { current_page, total_pages, total_count, per_page } }`, single records with `{ data: {...} }`.
 
-More endpoints (salaries, structures, insights) will be documented here as they're built.
+Employee list and detail include the current salary. More endpoints (insights) will be documented here as they're built.
 
 ## Status
 
@@ -186,7 +196,8 @@ More endpoints (salaries, structures, insights) will be documented here as they'
 | Authentication (Devise + JWT) | Done |
 | Error handling, quality pipeline, CI | Done |
 | Employees and departments | Done |
-| Salary structures and calculator | Planned |
-| Salary history and audit log | Planned |
+| Salary structures and calculator | Done |
+| Salary history and audit log | Done |
 | Insights | Planned |
-| React UI, 10,000-employee seed, deployment | Planned |
+| 10,000-employee seed | Done |
+| React UI, deployment | Planned |

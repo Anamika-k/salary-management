@@ -10,12 +10,18 @@ Rails.application.routes.draw do
         delete "auth/sign_out", to: "auth/sessions#destroy"
       end
 
-      resources :employees
+      resources :employees do
+        resources :salaries, only: %i[index create], controller: "employee_salaries" do
+          get :breakdown, on: :collection
+        end
+        resources :audit_logs, only: :index
+      end
       resources :departments, only: %i[index create update destroy]
       resource :filters, only: :show
       resources :salary_components, only: :index
       resources :salary_structures, only: %i[index show] do
         get :preview, on: :member
+        resources :components, only: :update, controller: "salary_structure_components"
       end
     end
   end

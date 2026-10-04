@@ -23,6 +23,10 @@ module ErrorHandling
       render_error(:bad_request, "parameter_missing", error.message)
     end
 
+    rescue_from Date::Error do |error|
+      render_error(:bad_request, "invalid_date", "Invalid date: #{error.message}")
+    end
+
     rescue_from ApplicationError do |error|
       render_error(error.status, error.code, error.message, error.details)
     end

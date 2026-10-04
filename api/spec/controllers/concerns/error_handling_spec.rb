@@ -9,6 +9,7 @@ RSpec.describe ErrorHandling, type: :controller do
       when "not_found" then User.find(0)
       when "invalid" then User.create!(name: "")
       when "missing_param" then params.require(:user)
+      when "bad_date" then "2026-13-45".to_date
       when "domain" then raise DomainError, "Overlaps an existing salary"
       when "unexpected" then raise "boom"
       end
@@ -36,6 +37,12 @@ RSpec.describe ErrorHandling, type: :controller do
     get :index, params: { case: "missing_param" }
     expect(response).to have_http_status(:bad_request)
     expect(body["code"]).to eq("parameter_missing")
+  end
+
+  it "renders 400 for an invalid date parameter" do
+    get :index, params: { case: "bad_date" }
+    expect(response).to have_http_status(:bad_request)
+    expect(body["code"]).to eq("invalid_date")
   end
 
   it "renders a domain error with its own status, code and message" do

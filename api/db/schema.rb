@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_120008) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_150001) do
   create_table "audit_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "action", null: false
@@ -73,14 +73,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120008) do
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.virtual "live_email", type: :string, as: "if((`deleted_at` is null),`email`,NULL)", stored: true
     t.index ["country_code"], name: "index_employees_on_country_code"
     t.index ["department_id"], name: "index_employees_on_department_id"
     t.index ["designation"], name: "index_employees_on_designation"
-    t.index ["email"], name: "index_employees_on_email", unique: true
     t.index ["employee_code"], name: "index_employees_on_employee_code", unique: true
     t.index ["employment_status"], name: "index_employees_on_employment_status"
     t.index ["first_name"], name: "index_employees_on_first_name"
     t.index ["last_name"], name: "index_employees_on_last_name"
+    t.index ["live_email"], name: "index_employees_on_live_email", unique: true
     t.check_constraint "(`employment_status` = _utf8mb4'terminated') = (`exit_date` is not null)", name: "employees_exit_date_iff_terminated_check"
     t.check_constraint "(`exit_date` is null) or (`exit_date` >= `joining_date`)", name: "employees_exit_after_joining_check"
     t.check_constraint "`employment_status` in (_utf8mb4'active',_utf8mb4'on_leave',_utf8mb4'terminated')", name: "employees_employment_status_check"

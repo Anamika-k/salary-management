@@ -36,6 +36,17 @@ RSpec.describe Employee do
     expect(build(:employee, email: "ASHA@acme.test")).not_to be_valid
   end
 
+  it "allows reusing the email of a soft-deleted employee" do
+    create(:employee, :deleted, email: "asha@acme.test")
+    expect(create(:employee, email: "asha@acme.test")).to be_persisted
+  end
+
+  it "still never allows two live employees with the same email at database level" do
+    create(:employee, email: "asha@acme.test")
+    duplicate = build(:employee, email: "asha@acme.test")
+    expect { duplicate.save!(validate: false) }.to raise_error(ActiveRecord::RecordNotUnique)
+  end
+
   it "rejects a duplicate employee code" do
     create(:employee, employee_code: "EMP000001")
     expect(build(:employee, employee_code: "EMP000001")).not_to be_valid

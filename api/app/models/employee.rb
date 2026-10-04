@@ -15,7 +15,7 @@ class Employee < ApplicationRecord
 
   validates :employee_code, :first_name, :last_name, :designation, :joining_date, presence: true
   validates :employee_code, uniqueness: true
-  validates :email, presence: true, uniqueness: { case_sensitive: false },
+  validates :email, presence: true, uniqueness: { case_sensitive: false, conditions: -> { kept } },
                     format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
   validates :country_code, presence: true
   validates :country_code, inclusion: { in: Country.codes, message: "is not supported" }, allow_blank: true

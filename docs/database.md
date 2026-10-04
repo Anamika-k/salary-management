@@ -153,8 +153,9 @@ The person being paid. **No salary amounts here**; those live in `employee_salar
 | `employment_status` | string enum | no | `active` (default), `on_leave`, `terminated` |
 | `exit_date` | date | yes | Required if and only if terminated. Makes "headcount on a date" answerable |
 | `deleted_at` | datetime | yes | Only for records created by mistake |
+| `live_email` | generated | yes | `email` if live, else `NULL`. Carries the email uniqueness |
 
-- **Indexes:** `employee_code` unique; `email` unique; `department_id`; `country_code`; `employment_status`; `designation`; `first_name`; `last_name`. Search uses prefix matching (`LIKE 'rah%'`), which can use these indexes.
+- **Indexes:** `employee_code` unique (codes are never reused, even after deletion); **unique `live_email`**, so a deleted mistake's email can be used again; `department_id`; `country_code`; `employment_status`; `designation`; `first_name`; `last_name`. Search matches any part of a name, email or code (`LIKE '%rah%'`). That can't use an index, but a scan of 10,000 rows takes about 40 ms.
 - **Checks:** status in allowed values; `exit_date >= joining_date`.
 - **Associations:** `belongs_to :department`; `has_many :employee_salaries`; `has_one :current_salary` (the live salary as of today, so lists can `includes(:current_salary)` without N+1); `has_many :audit_logs, as: :auditable`.
 

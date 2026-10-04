@@ -30,7 +30,10 @@ gem "bootsnap", require: false
 gem "json", "~> 2.19"
 
 # Allow the React app (separate origin) to call the API [https://github.com/cyu/rack-cors]
-gem "rack-cors", "~> 3.0"
+gem "rack-cors"
+
+# Pagination for every list endpoint
+gem "kaminari", "~> 1.2"
 
 # Authentication: Devise for passwords, devise-jwt for stateless API tokens
 gem "devise", "~> 5.0"

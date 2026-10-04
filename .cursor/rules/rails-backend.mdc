@@ -9,35 +9,38 @@ alwaysApply: false
 ## One-way hierarchy
 `Controller -> Service -> Model`. Never the reverse; models never call services or controllers.
 
-- **Controllers**: params, authentication/authorization, call one service or simple query, render JSON. Nothing else.
-- **Services** (`app/services`): all business logic and multi-step work (calculations, salary changes, insights, audit logging).
-- **Models**: associations, validations, enums, scopes. No complex processing or callbacks with side effects.
+- **Controllers**: find, call one service or simple query, render. Small actions; no business logic.
+  Render only through the base helpers: `render_records` (paginated lists) and `render_record`.
+- **Services** (`app/services/<domain>/`): all business logic. One job per class:
+  `initialize` takes inputs, one public method (`call`) does the work; wrap multi-step writes
+  in a transaction. Raise `ApplicationError` subclasses; never rescue.
+- **Models**: associations (with scopes), validations, enums, named scopes, `delegate`.
+  No complex processing, no callbacks with side effects.
 
 ```ruby
-# BAD: logic in controller
+# GOOD controller action
 def create
-  salary = employee.salaries.create!(params)
-  employee.salaries.where.not(id: salary.id).update_all(effective_to: salary.effective_from - 1)
-end
-
-# GOOD
-def create
-  salary = Salaries::ChangeService.call(employee:, params: salary_params)
-  render json: SalarySerializer.new(salary), status: :created
+  salary = Salaries::ChangeService.new(employee:, params: salary_params, user: current_user).call
+  render_record(salary, serializer: EmployeeSalarySerializer, status: :created)
 end
 ```
 
-## Lite APIs
-- Return only the columns a screen needs. Use `select` / dedicated serializers.
-- Filter dropdowns and lists get lightweight endpoints, never the full table or full records.
-- Paginate every list endpoint.
+## Responses
+- Lists: `{ data: [...], meta: { current_page, total_pages, total_count, per_page } }`. Always paginated
+  with a capped `per_page`. Single records: `{ data: {...} }`.
+- Serializers live in `app/serializers`. A `*LiteSerializer` returns only what a list or dropdown needs.
 
 ## Querying
-- Query through associations (`department.employees.active`), not manual id lookups.
-- No N+1: use `includes` / `preload`; aggregates (`count`, `sum`, `average`, `group`) run in the database.
-- Use scopes for reusable filters; soft-deleted records excluded via an explicit scope (e.g. `kept`).
+- Query through associations (`department.employees.kept`), not manual id lookups.
+- Filters are plain named scopes (`scope :in_country, ->(code) { where(country_code: code) }`),
+  applied only when the param is present. Sorting uses an explicit allow-list.
+- No N+1: `includes`/`preload` for associations. Aggregates (counts, sums, averages) that can't be
+  preloaded go in a **preloader** (`app/services/preloaders/`): one grouped query for the whole page,
+  passed to the serializer.
+- Aggregates run in the database (`group`, `sum`, `average`, `count`), never Ruby loops.
 
 ## Standards
-- Follow Rails conventions: RESTful routes, strong params, `snake_case`, one class per file.
-- Enforce important rules in both model validations and DB constraints (unique indexes, NOT NULL, checks).
-- Tests in RSpec + FactoryBot: services get unit specs, endpoints get request specs.
+- Rails conventions: RESTful routes, strong params, `snake_case`, one class per file.
+- Rules enforced in both model validations and DB constraints (unique indexes, NOT NULL, checks).
+- RSpec + FactoryBot: services get unit specs, endpoints get request specs. Coverage stays above
+  the SimpleCov minimum.

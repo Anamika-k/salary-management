@@ -8,7 +8,11 @@ alwaysApply: true
 ## Process
 - Make no changes unless the user explicitly asks. Discuss approach first when unsure.
 - Test first: list every edge case, write the failing tests, then write code to make them pass.
-- Small, incremental commits with conventional messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `perf:`).
+- Small, incremental commits with short, plain messages (e.g. "Add employee search"), no prefixes.
+- Nothing is committed that fails the pipeline: RuboCop and RSpec on commit, Brakeman and
+  bundler-audit on push, the full CI on GitHub. Never bypass hooks with `--no-verify`.
+- Record significant decisions in the trade-offs table in `docs/design.md`.
+- Keep `README.md` current when setup, commands or conventions change.
 
 ## Code style
 - Keep it simple. Prefer the plain, obvious solution over a clever one.
@@ -30,11 +34,13 @@ class SalaryCalculator
 
 ## Errors
 - Never swallow errors. No `rescue` in services, models or controller actions;
-  let errors raise so production failures are visible (logs + error tracking).
-- Expected errors are mapped to HTTP responses in ONE place: the base `ErrorHandling`
-  concern on `ApplicationController`. Each mapped error is logged as a warning.
+  let errors raise so they reach the ONE place that handles them.
+- That place is the `ErrorHandling` concern on `ApplicationController`:
+  - Expected errors map to 4xx responses and are logged as warnings.
+  - Unexpected errors (bugs) are logged at error level with the full backtrace, reported via
+    `Rails.error.report` (error tracking plugs in there), and answered with a generic 500.
+    Internal details never leak to the client.
 - Domain errors inherit from `ApplicationError` (`app/errors/`) and declare their status.
-- Anything unexpected is not rescued: it becomes a 500 and is reported.
 - Error JSON is always `{ error: "message", code: "snake_case", details: {...} }`.
 
 ```ruby

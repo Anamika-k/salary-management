@@ -40,6 +40,28 @@ RSpec.describe "db/seeds.rb" do
     expect(Department.kept.pluck(:name)).to include("Engineering", "Finance", "Human Resources")
   end
 
+  describe "salary structures" do
+    before { run_seeds }
+
+    it "creates one standard structure per supported country" do
+      expect(SalaryStructure.kept.pluck(:country_code)).to match_array(Country.codes)
+    end
+
+    it "gives every structure a valid breakdown for a typical salary" do
+      SalaryStructure.includes(rules: %i[salary_component base_component]).find_each do |structure|
+        result = Salaries::Calculator.new(annual_salary: 1_200_000, structure:).call
+        expect(result[:total_earnings]).to eq(result[:monthly_gross])
+      end
+    end
+
+    it "never overwrites HR's rule edits when run again" do
+      pf = SalaryComponent.find_by!(code: "PF").salary_structure_components.first
+      pf.update!(value: 10)
+      run_seeds
+      expect(pf.reload.value).to eq(10)
+    end
+  end
+
   describe "employees" do
     before { run_seeds }
 
@@ -60,6 +82,7 @@ RSpec.describe "db/seeds.rb" do
 
     it "produces the same data on every run" do
       first = Employee.order(:employee_code).pluck(:employee_code, :email, :country_code)
+      EmployeeSalary.delete_all
       Employee.delete_all
       run_seeds
       expect(Employee.order(:employee_code).pluck(:employee_code, :email, :country_code)).to eq(first)
@@ -72,8 +95,52 @@ RSpec.describe "db/seeds.rb" do
     end
   end
 
+  describe "salary history" do
+    before { run_seeds }
+
+    it "gives every employee a joining salary on their joining date" do
+      joining = EmployeeSalary.where(change_type: "joining")
+      expect(joining.count).to eq(Employee.count)
+      expect(joining.includes(:employee).all? { |salary| salary.effective_from == salary.employee.joining_date }).to be(true)
+    end
+
+    it "adds raises over the years, in the currency of the employee's country" do
+      expect(EmployeeSalary.where(change_type: %w[increment promotion]).count).to be > 0
+      expect(EmployeeSalary.includes(:employee).all? { |salary| salary.currency == Country.find(salary.employee.country_code)[:currency] })
+        .to be(true)
+    end
+
+    it "builds a continuous history: each period ends the day before the next starts" do
+      EmployeeSalary.order(:employee_id, :effective_from).group_by(&:employee_id).each_value do |history|
+        history.each_cons(2) { |earlier, later| expect(earlier.effective_to).to eq(later.effective_from - 1) }
+      end
+    end
+
+    it "gives active employees a current salary and ends terminated employees' pay on their exit date" do
+      expect(Employee.where(employment_status: "active").includes(:current_salary).all?(&:current_salary)).to be(true)
+      Employee.where(employment_status: "terminated").includes(:employee_salaries).find_each do |employee|
+        expect(employee.employee_salaries.max_by(&:effective_from).effective_to).to eq(employee.exit_date)
+      end
+    end
+
+    it "creates only salaries that pass every model validation" do
+      expect(EmployeeSalary.includes(:employee, :salary_structure).reject(&:valid?)).to be_empty
+    end
+
+    it "never adds seed salaries to an employee who already has salary history" do
+      employee = Employee.first
+      EmployeeSalary.where(employee:).delete_all
+      create(:employee_salary, employee:, effective_from: employee.joining_date, currency: "INR")
+      run_seeds
+      expect(employee.employee_salaries.count).to eq(1)
+    end
+  end
+
   it "is idempotent: running twice creates nothing new" do
     run_seeds
-    expect { run_seeds }.not_to change { [ User.count, Department.count, Employee.count ] }
+    expect { run_seeds }.not_to change {
+      [ User.count, Department.count, Employee.count, SalaryComponent.count, SalaryStructure.count,
+        SalaryStructureComponent.count, EmployeeSalary.count ]
+    }
   end
 end

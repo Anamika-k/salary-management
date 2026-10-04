@@ -13,6 +13,10 @@ Rails.application.routes.draw do
       resources :employees
       resources :departments, only: %i[index create update destroy]
       resource :filters, only: :show
+      resources :salary_components, only: :index
+      resources :salary_structures, only: %i[index show] do
+        get :preview, on: :member
+      end
     end
   end
 

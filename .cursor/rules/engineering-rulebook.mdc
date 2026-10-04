@@ -16,7 +16,9 @@ alwaysApply: true
 
 ## Code style
 - Keep it simple. Prefer the plain, obvious solution over a clever one.
-- Files stay small and readable: aim for 100 lines, hard limit ~150. Split when it grows.
+- Application code (services, models, controllers) stays small and readable: aim for ~100 lines,
+  ~150 at most, as a guideline, not a hard rule. Split when a class does more than one job.
+  `db/seeds.rb` is exempt: all seed data stays in that one file however long it gets.
 - No duplicate code. Extract shared logic into a service, concern or helper.
 - Every class/module starts with a short comment saying what it is for and why it exists,
   so whoever modifies it later knows the intent. Comment non-obvious logic only.

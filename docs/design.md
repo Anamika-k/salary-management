@@ -39,6 +39,26 @@ api/app/
   serializers/          one per resource, plus "lite" variants for lists
 ```
 
+## Error handling
+
+Errors are never swallowed. Our code doesn't `rescue` anything. Expected failures raise, and a single base concern (`ErrorHandling`, included in `ApplicationController`) turns them into consistent JSON responses:
+
+| Error | HTTP status |
+|---|---|
+| Missing or invalid token (Devise) | 401 |
+| `ActiveRecord::RecordNotFound` | 404 |
+| `ActionController::ParameterMissing` | 400 |
+| `ActiveRecord::RecordInvalid` | 422, with field errors in `details` |
+| `ApplicationError` subclasses (domain rules, e.g. overlapping salary periods) | Their own declared status |
+
+Every handled error is logged as a warning, so expected failures are still visible. **Anything unexpected is deliberately not rescued.** It becomes a 500, Rails logs it with a full backtrace, and production error tracking reports it. A bug can never be hidden behind a friendly message.
+
+All error responses have the same shape, compatible with Devise's own 401 body, so the React app reads `error` the same way everywhere:
+
+```json
+{ "error": "Validation failed: Name can't be blank", "code": "record_invalid", "details": { "name": ["can't be blank"] } }
+```
+
 ## API sketch
 
 All endpoints sit under `/api/v1` and require a signed-in HR user, except sign-in itself.

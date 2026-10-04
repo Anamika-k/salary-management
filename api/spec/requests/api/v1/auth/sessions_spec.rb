@@ -32,6 +32,11 @@ RSpec.describe "Auth sessions", type: :request do
       expect(response.headers["Authorization"]).to be_nil
     end
 
+    it "returns the same error key as every other API error" do
+      sign_in_as(email: "hr@acme.test", password: "wrong")
+      expect(response.parsed_body["error"]).to be_a(String).and be_present
+    end
+
     it "rejects an unknown email" do
       sign_in_as(email: "nobody@acme.test", password: "Secret123!")
       expect(response).to have_http_status(:unauthorized)

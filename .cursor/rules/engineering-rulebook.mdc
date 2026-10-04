@@ -28,6 +28,27 @@ class SalaryCalculator
   Hard delete only for data that will never be used again (e.g. expired tokens).
 - Money is always `decimal`, never float.
 
+## Errors
+- Never swallow errors. No `rescue` in services, models or controller actions;
+  let errors raise so production failures are visible (logs + error tracking).
+- Expected errors are mapped to HTTP responses in ONE place: the base `ErrorHandling`
+  concern on `ApplicationController`. Each mapped error is logged as a warning.
+- Domain errors inherit from `ApplicationError` (`app/errors/`) and declare their status.
+- Anything unexpected is not rescued: it becomes a 500 and is reported.
+- Error JSON is always `{ error: "message", code: "snake_case", details: {...} }`.
+
+```ruby
+# BAD: hides the failure
+def call
+  salary.save!
+rescue StandardError
+  nil
+end
+
+# GOOD: raise a domain error; the base class renders it
+raise Salaries::OverlappingPeriodError, "Overlaps an existing salary" if overlap?
+```
+
 ## Security
 - No raw SQL. Use ActiveRecord query methods and associations.
   Raw SQL only when truly unavoidable, always parameterised, with a comment explaining why.

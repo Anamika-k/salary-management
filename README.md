@@ -5,13 +5,16 @@ A web application for ACME's HR Manager to manage salaries for ~10,000 employees
 - **What and why:** [docs/requirements.md](docs/requirements.md) (scope and what's deliberately left out)
 - **How it's built:** [docs/design.md](docs/design.md) (architecture, decisions and trade-offs, performance)
 - **Database:** [docs/database.md](docs/database.md) (every table and column, and why)
+- **How AI was used:** [docs/ai-usage.md](docs/ai-usage.md) (who decided what, rules, how output was checked)
+
+**Live demo:** https://courageous-treacle-1f9b48.netlify.app. Sign in with `hr@acme.com` / `Password@123!` (seeded demo data, no real people).
 
 ## Repository layout
 
 ```
 api/          Rails 8 API (Ruby, MySQL), all backend code and specs
 web_portal/   React app (Vite, Tailwind), the HR Manager's UI
-docs/         Requirements, design, database
+docs/         Requirements, design, database, AI usage
 .githooks/    Git hooks: lint, tests and security checks before commit/push
 .github/      CI pipeline
 .cursor/      Engineering rule book used with AI tooling
@@ -45,47 +48,53 @@ npm run build                   # Production build into dist/
 
 ## Getting Started
 
-1. **Install prerequisites**
-   1. Ruby (version in `api/.ruby-version`), via [rvm](https://rvm.io) or [rbenv](https://github.com/rbenv/rbenv)
-   2. MySQL 8+: `brew install mysql && brew services start mysql`
-   3. Bundler: `gem install bundler`
-2. **Install gems**
-   ```shell
-   cd api && bundle install
-   ```
-3. **Configure your environment**
-   ```shell
-   cp .env.sample .env
-   ```
-   Set `DATABASE_PASSWORD` to your local MySQL root password. The other defaults work out of the box. `.env` is git-ignored and loaded automatically in development and test.
-4. **Create the database and seed it**
-   ```shell
-   bin/rails db:prepare
-   ```
-   This creates the HR Manager, 10 departments, one salary structure per country, 10,000 realistic employees across 6 countries and about 56,000 salary records (joining salaries plus yearly raises) in under 10 seconds. The data is identical on every machine, and re-running `bin/rails db:seed` never duplicates rows or overwrites edits.
-5. **Enable the git hooks** (once per clone, from the repository root)
-   ```shell
-   git config core.hooksPath .githooks
-   ```
-6. **Run it**
-   ```shell
-   bundle exec rspec        # everything should be green
-   bin/rails server
-   ```
-7. **Sign in** with the seeded HR Manager: `hr@acme.com` / `ChangeMe123!`
-   ```shell
-   curl -i -X POST localhost:3000/api/v1/auth/sign_in \
-     -H 'Content-Type: application/json' \
-     -d '{"user":{"email":"hr@acme.com","password":"ChangeMe123!"}}'
-   ```
-   The token is in the `Authorization` response header. Send it on every other request.
-8. **Open the portal** (in a second terminal)
-   ```shell
-   cd web_portal && npm install && npm run dev
-   ```
-   Open http://localhost:5173 and sign in with the same account. The API URL defaults to `http://localhost:3000`; to change it, copy `.env.sample` to `.env.local` and set `VITE_API_URL`.
+1. Ensure you have Ruby and Bundler installed.
+   1. Use the version in `api/.ruby-version`. We recommend [rvm](https://rvm.io) or [rbenv](https://github.com/rbenv/rbenv) for managing Ruby versions.
+   2. `gem install bundler`
+2. Ensure you have MySQL 8 or newer installed and running.
+   1. If you're using macOS we recommend [Homebrew](https://brew.sh/): `brew install mysql`
+   2. `brew services start mysql`
+3. Ensure you have Node.js 20 or newer installed (for the portal).
+   1. `brew install node`, or use [nvm](https://github.com/nvm-sh/nvm)
+4. Clone the repository and enable the git hooks
+   1. `git clone https://github.com/Anamika-k/salary-management.git && cd salary-management`
+   2. `git config core.hooksPath .githooks` (lint, tests and security checks before commit and push)
+5. Set up the API
+   1. `cd api && bundle install`
+   2. `cp .env.sample .env`
+   3. Set `DATABASE_PASSWORD` in `.env` to your local MySQL root password. Out of the box the rest of the file is good enough to get started.
+   4. `bin/rails db:prepare` creates the database, loads the schema and seeds it: the HR Manager, 10 departments, one salary structure per country, 10,000 employees across 6 countries and about 56,000 salary records. It takes under 10 seconds, the data is the same on every machine, and re-running `bin/rails db:seed` never duplicates rows or overwrites edits.
+   5. `bundle exec rspec` to check everything is green
+   6. `bin/rails server` starts the API on http://localhost:3000. http://localhost:3000/up shows a green page when it's running.
+6. Set up the portal, in a second terminal
+   1. `cd web_portal && npm install`
+   2. `npm run dev` starts the portal on http://localhost:5173
+   3. Out of the box the portal calls the API on `http://localhost:3000`. If yours runs elsewhere, `cp .env.sample .env.local` and set `VITE_API_URL`.
+7. Sign in
+   1. Open http://localhost:5173 and sign in with the seeded HR Manager: `hr@acme.com` / `ChangeMe123!`
+   2. To call the API directly, sign in with curl and send the token from the `Authorization` response header on every other request:
+      ```shell
+      curl -i -X POST localhost:3000/api/v1/auth/sign_in \
+        -H 'Content-Type: application/json' \
+        -d '{"user":{"email":"hr@acme.com","password":"ChangeMe123!"}}'
+      ```
 
-### Environment variables
+## Connecting the Portal to the API
+
+The portal and the API run on different addresses, so two settings must point at each other. `VITE_API_URL` (in `web_portal/.env.local`) tells the portal where the API is. `FRONTEND_ORIGINS` (in `api/.env`) tells the API which portal address may call it. The defaults already match for local development:
+
+```
+VITE_API_URL=http://localhost:3000        # web_portal/.env.local
+FRONTEND_ORIGINS=http://localhost:5173    # api/.env, comma-separated if more than one
+```
+
+If you change a port or address, update both and restart both apps (Vite only reads `.env.local` at startup).
+
+## Database
+
+The API connects to the local MySQL socket (`/tmp/mysql.sock`) as `root` by default. To connect over TCP instead (Docker, CI), set `DATABASE_HOST`, and set `DATABASE_USERNAME` / `DATABASE_PASSWORD` if they differ.
+
+## Environment Variables
 
 | Variable | Purpose | Default |
 |---|---|---|
@@ -96,7 +105,7 @@ npm run build                   # Production build into dist/
 | `SEED_HR_EMAIL` / `SEED_HR_PASSWORD` | Seeded HR Manager; password **required in production** | `hr@acme.com` / `ChangeMe123!` |
 | `SEED_EMPLOYEE_COUNT` | How many demo employees the seed creates | `10000` |
 | `DATABASE_URL` | Production only: `mysql2://user:pass@host:port/name` | unset |
-| `RAILS_MASTER_KEY` | Production only: contents of `api/config/master.key` | unset |
+| `SECRET_KEY_BASE` | Production only: Rails' signing secret (replaces the master key) | unset |
 
 ## Deployment
 
@@ -104,7 +113,7 @@ The API and MySQL run on [Railway](https://railway.com), the portal on [Netlify]
 
 **API (Railway)**
 1. New project, add **MySQL**, then add a service from this repo with root directory `api`.
-2. Variables: `DATABASE_URL` (Railway's `MYSQL_URL` with `mysql://` changed to `mysql2://`), `RAILS_MASTER_KEY`, `DEVISE_JWT_SECRET_KEY` (from `bin/rails secret`), `SEED_HR_PASSWORD`, and `FRONTEND_ORIGINS` (the portal URL).
+2. Variables: `DATABASE_URL` (`mysql2://` URL built from the MySQL service's references), `RAILS_ENV=production`, `SECRET_KEY_BASE` and `DEVISE_JWT_SECRET_KEY` (Railway's `${{secret(64)}}`), `SEED_HR_PASSWORD`, and `FRONTEND_ORIGINS` (the portal URL).
 3. Pre-deploy command: `bin/rails db:prepare db:seed` (seeds are safe to repeat).
 4. Networking: generate a public domain.
 
@@ -224,21 +233,3 @@ All endpoints are under `/api/v1` and require `Authorization: Bearer <token>` un
 Lists respond with `{ data: [...], meta: { current_page, total_pages, total_count, per_page } }`, single records with `{ data: {...} }`.
 
 Employee list and detail include the current salary. Pay figures in insights use today's salary of active and on-leave employees; terminated and deleted employees are left out. Amounts in different currencies are never added together, and an unknown country returns `400 unknown_country_error`.
-
-## Status
-
-| Area | State |
-|---|---|
-| Requirements, design and database docs | Done |
-| Database schema (8 tables) | Done |
-| Authentication (Devise + JWT) | Done |
-| Error handling, quality pipeline, CI | Done |
-| Employees and departments | Done |
-| Salary structures and calculator | Done |
-| Salary history and audit log | Done |
-| Insights API | Done |
-| 10,000-employee seed | Done |
-| Web portal: sign in and app shell | Done |
-| Web portal: employees, salary history, departments, structures | Done |
-| Web portal: dashboard (insights) | Done |
-| Deployment | Planned |

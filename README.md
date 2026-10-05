@@ -95,6 +95,24 @@ npm run build                   # Production build into dist/
 | `FRONTEND_ORIGINS` | Comma-separated origins allowed by CORS | `http://localhost:5173` |
 | `SEED_HR_EMAIL` / `SEED_HR_PASSWORD` | Seeded HR Manager; password **required in production** | `hr@acme.com` / `ChangeMe123!` |
 | `SEED_EMPLOYEE_COUNT` | How many demo employees the seed creates | `10000` |
+| `DATABASE_URL` | Production only: `mysql2://user:pass@host:port/name` | unset |
+| `RAILS_MASTER_KEY` | Production only: contents of `api/config/master.key` | unset |
+
+## Deployment
+
+The API and MySQL run on [Railway](https://railway.com), the portal on [Netlify](https://netlify.com). Both deploy from `main` on every push.
+
+**API (Railway)**
+1. New project, add **MySQL**, then add a service from this repo with root directory `api`.
+2. Variables: `DATABASE_URL` (Railway's `MYSQL_URL` with `mysql://` changed to `mysql2://`), `RAILS_MASTER_KEY`, `DEVISE_JWT_SECRET_KEY` (from `bin/rails secret`), `SEED_HR_PASSWORD`, and `FRONTEND_ORIGINS` (the portal URL).
+3. Pre-deploy command: `bin/rails db:prepare db:seed` (seeds are safe to repeat).
+4. Networking: generate a public domain.
+
+**Portal (Netlify)**
+1. Base directory `web_portal`, build command `npm run build`, publish directory `web_portal/dist`.
+2. Variable `VITE_API_URL` set to the API's Railway URL.
+
+`web_portal/public/_redirects` sends every path to `index.html` so links like `/employees` work on refresh.
 
 ## How a request flows
 

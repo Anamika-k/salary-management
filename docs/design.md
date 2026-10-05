@@ -121,6 +121,7 @@ The breakdown is the **standard monthly salary**, not an actual month's payout. 
 | Insights comparing amounts require a country | Pay is only comparable in one currency; no exchange rates needed | No single global cost figure |
 | Recent changes come from salary history, not the audit log | Seeded raises show up, and every change has a history row anyway | Doesn't show who made the change (the audit trail does) |
 | Employee codes generated (`EMP000001`) | Always unique and in sequence; HR never types them | Codes can't follow a custom format |
+| Production uses one database; in-memory cache, in-process jobs | The app has no caching, jobs or live updates, and hosts give one MySQL database | Adding background jobs later means bringing back Solid Queue |
 
 ## Performance at 10,000 employees
 

@@ -10,7 +10,7 @@ A web application for ACME's HR Manager to manage salaries for ~10,000 employees
 
 ```
 api/          Rails 8 API (Ruby, MySQL), all backend code and specs
-web_portal/   React app (coming soon)
+web_portal/   React app (Vite, Tailwind), the HR Manager's UI
 docs/         Requirements, design, database
 .githooks/    Git hooks: lint, tests and security checks before commit/push
 .github/      CI pipeline
@@ -31,6 +31,16 @@ bin/brakeman                    # Security scan
 bundle exec bundle-audit check --update   # Known gem vulnerabilities
 bin/rails db:seed               # Re-run seeds (safe to repeat)
 bin/rails console               # Rails console
+```
+
+Run from `web_portal/` (Node 20+):
+
+```shell
+npm install                     # Install packages
+npm run dev                     # Portal on http://localhost:5173 (API must be running)
+npm test                        # Run the tests
+npm run lint                    # Lint
+npm run build                   # Production build into dist/
 ```
 
 ## Getting Started
@@ -69,6 +79,11 @@ bin/rails console               # Rails console
      -d '{"user":{"email":"hr@acme.com","password":"ChangeMe123!"}}'
    ```
    The token is in the `Authorization` response header. Send it on every other request.
+8. **Open the portal** (in a second terminal)
+   ```shell
+   cd web_portal && npm install && npm run dev
+   ```
+   Open http://localhost:5173 and sign in with the same account. The API URL defaults to `http://localhost:3000`; to change it, copy `.env.sample` to `.env.local` and set `VITE_API_URL`.
 
 ### Environment variables
 

@@ -1,0 +1,36 @@
+/* Design tokens and base styles. One accent colour, neutral greys, Inter. */
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f3f3ff;
+  --color-brand-100: #e8e8fe;
+  --color-brand-200: #d3d3fc;
+  --color-brand-400: #8b8bf0;
+  --color-brand-500: #6e6ade;
+  --color-brand-600: #5b5bd6;
+  --color-brand-700: #4a4ac0;
+
+  --shadow-card: 0 1px 2px rgb(24 24 27 / 0.04), 0 1px 1px rgb(24 24 27 / 0.02);
+  --shadow-pop: 0 12px 32px -8px rgb(24 24 27 / 0.18), 0 2px 6px rgb(24 24 27 / 0.06);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  body {
+    @apply bg-zinc-50 text-zinc-900;
+  }
+  ::selection {
+    @apply bg-brand-100 text-brand-700;
+  }
+}
+
+/* Money and counts line up in tables. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

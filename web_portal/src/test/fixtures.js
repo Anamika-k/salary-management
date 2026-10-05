@@ -85,6 +85,46 @@ export const structure = {
   ],
 };
 
+export const insights = {
+  summary: {
+    headcount: { total: 10000, active: 8513, on_leave: 485, terminated: 1002 },
+    joiners_this_year: 714, leavers_this_year: 264, salary_changes_last_30_days: 640,
+    paid_without_salary: 0, countries: 6,
+  },
+  byCountry: [
+    { country_code: "IN", country_name: "India", currency: "INR", headcount: 4624, total_cost: "6730797000.0",
+      average: "1455622.19", median: "1332500.0", minimum: "511000.0", maximum: "4633000.0" },
+    { country_code: "US", country_name: "United States", currency: "USD", headcount: 1714, total_cost: "295329000.0",
+      average: "172303.97", median: "160500.0", minimum: "60000.0", maximum: "511000.0" },
+  ],
+  byDepartment: (code, currency) => ({
+    country: { code, name: code === "IN" ? "India" : "United States", currency },
+    groups: [
+      { department: { id: 1, name: code === "IN" ? "Engineering" : "Sales" }, headcount: 1361, total_cost: "2231445000.0",
+        average: "1639562.82", median: "1531000.0", minimum: "516000.0", maximum: "4633000.0" },
+    ],
+  }),
+  byDesignation: {
+    country: { code: "IN", name: "India", currency: "INR" },
+    groups: [
+      { designation: "Engineering Manager", headcount: 328, total_cost: "803680000.0", average: "2450243.9",
+        median: "2347500.0", minimum: "1429000.0", maximum: "4633000.0" },
+    ],
+  },
+  distribution: {
+    country: { code: "IN", name: "India", currency: "INR" }, currency: "INR", headcount: 2733,
+    bands: [
+      { from: "500000.0", to: "1000000.0", count: 1253 },
+      { from: "1000000.0", to: "1500000.0", count: 1480 },
+    ],
+  },
+  recentChanges: [
+    { id: 9, change_type: "promotion", effective_from: "2026-09-30", annual_salary: "139000.0", currency: "EUR",
+      previous_salary: "120000.0", change_percent: "15.8",
+      employee: { id: 7, full_name: "Hannah Meyer", employee_code: "EMP008879", designation: "Account Manager", department: "Sales" } },
+  ],
+};
+
 export function page(data, meta = {}) {
   return {
     data,

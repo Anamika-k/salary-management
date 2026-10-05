@@ -2,8 +2,8 @@
 import { Navigate, Route, Routes } from "react-router";
 import RequireAuth from "@/components/RequireAuth";
 import AppShell from "@/components/layout/AppShell";
-import PageHeader from "@/components/ui/PageHeader";
 import SignInPage from "@/pages/SignInPage";
+import DashboardPage from "@/pages/dashboard/DashboardPage";
 import EmployeesPage from "@/pages/employees/EmployeesPage";
 import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
 import DepartmentsPage from "@/pages/DepartmentsPage";
@@ -15,7 +15,7 @@ export default function App() {
       <Route path="/sign-in" element={<SignInPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<PageHeader title="Dashboard" description="Pay insights will appear here." />} />
+          <Route index element={<DashboardPage />} />
           <Route path="employees" element={<EmployeesPage />} />
           <Route path="employees/:id" element={<EmployeeDetailPage />} />
           <Route path="departments" element={<DepartmentsPage />} />

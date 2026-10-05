@@ -220,4 +220,7 @@ Employee list and detail include the current salary. Pay figures in insights use
 | Salary history and audit log | Done |
 | Insights API | Done |
 | 10,000-employee seed | Done |
-| React UI, deployment | Planned |
+| Web portal: sign in and app shell | Done |
+| Web portal: employees, salary history, departments, structures | Done |
+| Web portal: dashboard (insights) | Done |
+| Deployment | Planned |

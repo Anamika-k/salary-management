@@ -47,6 +47,20 @@ export const usePreview = (id, annualSalary) =>
     retry: false,
   });
 
+// ---- Insights ---------------------------------------------------------------
+const insight = (report, params) => ({
+  queryKey: ["insights", report, params],
+  queryFn: () => api.get(`/insights/${report}`, params).then(data),
+  placeholderData: keepPreviousData,
+});
+
+export const useSummary = () => useQuery(insight("summary"));
+export const useByCountry = () => useQuery(insight("by_country"));
+export const useRecentChanges = () => useQuery(insight("recent_changes", { limit: 8 }));
+export const useByDepartment = (country) => useQuery({ ...insight("by_department", { country }), enabled: Boolean(country) });
+export const useByDesignation = (country) => useQuery({ ...insight("by_designation", { country }), enabled: Boolean(country) });
+export const useDistribution = (country) => useQuery({ ...insight("distribution", { country }), enabled: Boolean(country) });
+
 // ---- Writes ----------------------------------------------------------------
 function useInvalidatingMutation(mutationFn, keys) {
   const queryClient = useQueryClient();
@@ -59,23 +73,23 @@ function useInvalidatingMutation(mutationFn, keys) {
 export const useSaveEmployee = (id) =>
   useInvalidatingMutation(
     (employee) => (id ? api.patch(`/employees/${id}`, { employee }) : api.post("/employees", { employee })).then(data),
-    [["employees"], ["employee"], ["filters"]],
+    [["employees"], ["employee"], ["filters"], ["insights"]],
   );
 
 export const useDeleteEmployee = () =>
-  useInvalidatingMutation((id) => api.delete(`/employees/${id}`), [["employees"]]);
+  useInvalidatingMutation((id) => api.delete(`/employees/${id}`), [["employees"], ["insights"]]);
 
 export const useChangeSalary = (id) =>
   useInvalidatingMutation(
     (salary) => api.post(`/employees/${id}/salaries`, { salary }).then(data),
-    [["employee", id], ["salaries", id], ["breakdown", id], ["audit-logs", id], ["employees"]],
+    [["employee", id], ["salaries", id], ["breakdown", id], ["audit-logs", id], ["employees"], ["insights"]],
   );
 
 export const useSaveDepartment = () =>
   useInvalidatingMutation(
     ({ id, name }) =>
       (id ? api.patch(`/departments/${id}`, { department: { name } }) : api.post("/departments", { department: { name } })).then(data),
-    [["departments"], ["filters"], ["employees"]],
+    [["departments"], ["filters"], ["employees"], ["insights"]],
   );
 
 export const useDeleteDepartment = () =>

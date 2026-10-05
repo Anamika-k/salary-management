@@ -70,6 +70,21 @@ export const structuresList = [
   { id: 3, code: "GB_STD", name: "United Kingdom Standard", country_code: "GB", description: "Standard pay structure for the UK", currency: "GBP" },
 ];
 
+export const structure = {
+  ...structuresList[0],
+  components: [
+    { id: 1, position: 1, calculation_method: "percentage_of_gross", value: "50.0",
+      component: { id: 1, code: "BASIC", name: "Basic Salary", component_type: "earning" }, base_component: null },
+    { id: 3, position: 2, calculation_method: "remainder", value: null,
+      component: { id: 3, code: "SPECIAL", name: "Special Allowance", component_type: "earning" }, base_component: null },
+    { id: 4, position: 3, calculation_method: "percentage_of_component", value: "12.0",
+      component: { id: 4, code: "PF", name: "Provident Fund", component_type: "deduction" },
+      base_component: { id: 1, code: "BASIC", name: "Basic Salary" } },
+    { id: 5, position: 4, calculation_method: "fixed", value: "200.0",
+      component: { id: 5, code: "PROF_TAX", name: "Professional Tax", component_type: "deduction" }, base_component: null },
+  ],
+};
+
 export function page(data, meta = {}) {
   return {
     data,

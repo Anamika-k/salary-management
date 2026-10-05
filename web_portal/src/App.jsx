@@ -6,6 +6,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import SignInPage from "@/pages/SignInPage";
 import EmployeesPage from "@/pages/employees/EmployeesPage";
 import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
+import DepartmentsPage from "@/pages/DepartmentsPage";
+import SalaryStructuresPage from "@/pages/salary-structures/SalaryStructuresPage";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
           <Route index element={<PageHeader title="Dashboard" description="Pay insights will appear here." />} />
           <Route path="employees" element={<EmployeesPage />} />
           <Route path="employees/:id" element={<EmployeeDetailPage />} />
+          <Route path="departments" element={<DepartmentsPage />} />
+          <Route path="salary-structures" element={<SalaryStructuresPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

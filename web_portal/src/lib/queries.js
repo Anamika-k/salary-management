@@ -29,8 +29,23 @@ export const useBreakdown = (id, on) =>
 export const useAuditLogs = (id) =>
   useQuery({ queryKey: ["audit-logs", id], queryFn: () => api.get(`/employees/${id}/audit_logs`, { per_page: 100 }).then(data) });
 
+export const useDepartments = () =>
+  useQuery({ queryKey: ["departments"], queryFn: () => api.get("/departments", { per_page: 100 }).then(data) });
+
 export const useStructures = () =>
   useQuery({ queryKey: ["salary-structures"], queryFn: () => api.get("/salary_structures", { per_page: 100 }).then(data) });
+
+export const useStructure = (id) =>
+  useQuery({ queryKey: ["salary-structure", id], queryFn: () => api.get(`/salary_structures/${id}`).then(data), enabled: Boolean(id) });
+
+export const usePreview = (id, annualSalary) =>
+  useQuery({
+    queryKey: ["preview", id, annualSalary],
+    queryFn: () => api.get(`/salary_structures/${id}/preview`, { annual_salary: annualSalary }).then(data),
+    enabled: Boolean(id) && Number(annualSalary) > 0,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
 
 // ---- Writes ----------------------------------------------------------------
 function useInvalidatingMutation(mutationFn, keys) {
@@ -54,4 +69,20 @@ export const useChangeSalary = (id) =>
   useInvalidatingMutation(
     (salary) => api.post(`/employees/${id}/salaries`, { salary }).then(data),
     [["employee", id], ["salaries", id], ["breakdown", id], ["audit-logs", id], ["employees"]],
+  );
+
+export const useSaveDepartment = () =>
+  useInvalidatingMutation(
+    ({ id, name }) =>
+      (id ? api.patch(`/departments/${id}`, { department: { name } }) : api.post("/departments", { department: { name } })).then(data),
+    [["departments"], ["filters"], ["employees"]],
+  );
+
+export const useDeleteDepartment = () =>
+  useInvalidatingMutation((id) => api.delete(`/departments/${id}`), [["departments"], ["filters"]]);
+
+export const useUpdateRule = (structureId) =>
+  useInvalidatingMutation(
+    ({ id, value }) => api.patch(`/salary_structures/${structureId}/components/${id}`, { component: { value } }).then(data),
+    [["salary-structure", structureId], ["preview", structureId], ["breakdown"]],
   );

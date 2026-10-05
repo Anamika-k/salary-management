@@ -162,7 +162,6 @@ All endpoints are under `/api/v1` and require `Authorization: Bearer <token>` un
 | `POST` | `/auth/sign_in` | Sign in (no token needed). Body `{ user: { email, password } }` |
 | `GET` | `/auth/me` | The signed-in user |
 | `DELETE` | `/auth/sign_out` | Revoke the current token |
-
 | `GET` | `/employees` | Paginated list (lite fields). Params: `q` (searches name, email, code), `department_id`, `country_code`, `employment_status`, `designation`, `sort` (`employee_code`, `first_name`, `last_name`, `joining_date`, `created_at`), `direction` (`asc`/`desc`), `page`, `per_page` (default 25, max 100) |
 | `GET` | `/employees/:id` | Full employee record |
 | `POST` | `/employees` | Create. Body `{ employee: { first_name, last_name, email, country_code, department_id, designation, joining_date, employment_status?, exit_date? } }`. The employee code is generated |
@@ -182,10 +181,16 @@ All endpoints are under `/api/v1` and require `Authorization: Bearer <token>` un
 | `GET` | `/salary_structures/:id` | A structure with its rules in calculation order |
 | `GET` | `/salary_structures/:id/preview?annual_salary=1200000` | Monthly breakdown (earnings, deductions, net pay) for any annual salary |
 | `PATCH` | `/salary_structures/:id/components/:rule_id` | Change one rule's value `{ component: { value } }`, e.g. PF 12% → 10% |
+| `GET` | `/insights/summary` | Headcount by status, joiners and leavers this year, salary changes in the last 30 days, paid employees missing a salary |
+| `GET` | `/insights/by_country` | Per country, in its own currency: headcount, total annual cost, average, median, minimum, maximum |
+| `GET` | `/insights/by_department?country=IN` | The same figures per department within one country |
+| `GET` | `/insights/by_designation?country=IN&department_id=` | The same figures per designation (department optional) |
+| `GET` | `/insights/distribution?country=IN` | Salaries in about 8 round, equal-width bands with a headcount each |
+| `GET` | `/insights/recent_changes?country=&limit=10` | Latest raises and promotions with the previous salary and % change (limit 1-50) |
 
 Lists respond with `{ data: [...], meta: { current_page, total_pages, total_count, per_page } }`, single records with `{ data: {...} }`.
 
-Employee list and detail include the current salary. More endpoints (insights) will be documented here as they're built.
+Employee list and detail include the current salary. Pay figures in insights use today's salary of active and on-leave employees; terminated and deleted employees are left out. Amounts in different currencies are never added together, and an unknown country returns `400 unknown_country_error`.
 
 ## Status
 
@@ -198,6 +203,6 @@ Employee list and detail include the current salary. More endpoints (insights) w
 | Employees and departments | Done |
 | Salary structures and calculator | Done |
 | Salary history and audit log | Done |
-| Insights | Planned |
+| Insights API | Done |
 | 10,000-employee seed | Done |
 | React UI, deployment | Planned |

@@ -79,7 +79,7 @@ All endpoints sit under `/api/v1` and require a signed-in HR user, except sign-i
 | Salaries | `GET /employees/:id/salaries` (history), `POST /employees/:id/salaries` (salary change), `GET /employees/:id/salaries/breakdown?on=date`, `GET /employees/:id/audit_logs` (salary audit trail) |
 | Structures | `GET /salary_structures`, `GET /salary_structures/:id` (rules nested), `GET /salary_structures/:id/preview?annual_salary=`, `PATCH /salary_structures/:id/components/:rule_id` (value only), `GET /salary_components`. Structures are seeded per country; HR edits rule values |
 | Filters | `GET /filters`: departments (id, name), countries, designations and statuses in one small payload for dropdowns |
-| Insights | `GET /insights/summary`, `/insights/by_country`, `/insights/by_department?country=`, `/insights/distribution?country=`, `/insights/recent_changes` |
+| Insights | `GET /insights/summary`, `/insights/by_country`, `/insights/by_department?country=`, `/insights/by_designation?country=&department_id=`, `/insights/distribution?country=`, `/insights/recent_changes?country=&limit=` |
 
 **Lite APIs:** list endpoints return only the columns the table on screen shows. Full records come from the detail endpoint. The filters endpoint exists so the UI never downloads the employee table just to fill a dropdown.
 
@@ -117,6 +117,9 @@ The breakdown is the **standard monthly salary**, not an actual month's payout. 
 | Countries as a fixed list in code, each with its currency | Changes rarely and needs no screen; the currency becomes the salary default | Adding a country is a one-line code change |
 | Structures seeded per country; HR edits rule values only | Covers the real need (rates change) without a structure builder UI | A new structure or component needs a seed change |
 | Salary history only moves forward | No re-closing of past periods, so history can't be silently rewritten; mistakes become visible "correction" entries | HR can't insert a period into the past |
+| Pay insights count today's salary of active and on-leave employees only | Matches "who we pay now"; leavers would distort averages and cost | Historical questions ("cost last year") need a date parameter later |
+| Insights comparing amounts require a country | Pay is only comparable in one currency; no exchange rates needed | No single global cost figure |
+| Recent changes come from salary history, not the audit log | Seeded raises show up, and every change has a history row anyway | Doesn't show who made the change (the audit trail does) |
 | Employee codes generated (`EMP000001`) | Always unique and in sequence; HR never types them | Codes can't follow a custom format |
 
 ## Performance at 10,000 employees

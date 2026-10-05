@@ -23,6 +23,14 @@ Rails.application.routes.draw do
         get :preview, on: :member
         resources :components, only: :update, controller: "salary_structure_components"
       end
+      scope :insights, controller: :insights, as: :insights do
+        get :summary
+        get :by_country
+        get :by_department
+        get :by_designation
+        get :distribution
+        get :recent_changes
+      end
     end
   end
 
